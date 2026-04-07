@@ -247,12 +247,14 @@
         }
 
         mobileInput.addEventListener('input', (e) => {
-            const char = e.data;
-            if (char) {
-                handleTyping(char.toLowerCase());
-                mobileInput.value = ''; // Reset for next char
-            }
-        });
+    const fullValue = e.target.value;
+    const lastChar = fullValue.charAt(fullValue.length - 1);
+    
+    if (lastChar && lastChar !== " ") {
+        handleTyping(lastChar.toLowerCase());
+    }
+    mobileInput.value = ''; 
+});
 
         class Particle {
             constructor(x, y, color) {
@@ -482,46 +484,50 @@
         }
 
         function handleTyping(char) {
-            if (gameState !== 'PLAYING') return;
-            keystrokes++;
+    if (gameState !== 'PLAYING') return;
+    keystrokes++;
 
-            if (activeEnemy) {
-                const targetChar = activeEnemy.text[activeEnemy.typed.length];
-                if (char === targetChar) {
-                    correctKeystrokes++;
-                    activeEnemy.typed += char;
-                    bullets.push(new Bullet(canvas.width/2, canvas.height - 80, activeEnemy.x, activeEnemy.y));
-                    
-                    if (activeEnemy.typed === activeEnemy.text) {
-                        createExplosion(activeEnemy.x, activeEnemy.y);
-                        score += activeEnemy.text.length * 10;
-                        enemies = enemies.filter(item => item !== activeEnemy);
-                        activeEnemy = null;
-                        updateHUD();
-                    }
-                } else {
-                    canvas.classList.add('shake');
-                    setTimeout(() => canvas.classList.remove('shake'), 100);
-                }
-            } else {
-                const potentialTarget = enemies.find(en => en.text[0] === char);
-                if (potentialTarget) {
-                    correctKeystrokes++;
-                    activeEnemy = potentialTarget;
-                    activeEnemy.typed = char;
-                    bullets.push(new Bullet(canvas.width/2, canvas.height - 80, activeEnemy.x, activeEnemy.y));
-                }
+    if (activeEnemy) {
+        const targetChar = activeEnemy.text[activeEnemy.typed.length];
+        if (char === targetChar) {
+            correctKeystrokes++;
+            activeEnemy.typed += char;
+            // Only shoots if the key is correct
+            bullets.push(new Bullet(canvas.width/2, canvas.height - 80, activeEnemy.x, activeEnemy.y));
+            
+            if (activeEnemy.typed === activeEnemy.text) {
+                createExplosion(activeEnemy.x, activeEnemy.y);
+                score += activeEnemy.text.length * 10;
+                enemies = enemies.filter(item => item !== activeEnemy);
+                activeEnemy = null;
+                updateHUD();
             }
+        } else {
+            // Wrong key: just shake, no bullet
+            canvas.classList.add('shake');
+            setTimeout(() => canvas.classList.remove('shake'), 100);
         }
+    } else {
+        const potentialTarget = enemies.find(en => en.text[0] === char);
+        if (potentialTarget) {
+            correctKeystrokes++;
+            activeEnemy = potentialTarget;
+            activeEnemy.typed = char;
+            bullets.push(new Bullet(canvas.width/2, canvas.height - 80, activeEnemy.x, activeEnemy.y));
+        }
+    }
+}
 
         window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                triggerEMP();
-            } else if (e.key.length === 1) {
-                handleTyping(e.key.toLowerCase());
-            }
-        });
+    if (e.repeat) return; // This stops the "machine gun" effect when holding a key!
+
+    if (e.code === 'Space') {
+        e.preventDefault();
+        triggerEMP();
+    } else if (e.key.length === 1) {
+        handleTyping(e.key.toLowerCase());
+    }
+});
 
         // Touch the screen to refocus keyboard on mobile
         canvas.addEventListener('touchstart', (e) => {
